@@ -1,0 +1,18 @@
+[package]
+org = "sachinira"
+name = "github_to_slack"
+version= "0.1.0"
+
+[build-options]
+observability-included=true
+
+[[dependency]]
+org = "ballerinax"
+name = "slack"
+version = "0.9.6"
+
+
+[[dependency]]
+org = "ballerinax"
+name = "github"
+version = "0.99.12"
