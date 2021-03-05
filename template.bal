@@ -1,8 +1,7 @@
-import ballerina/websub;
-//import ballerina/log;
 import ballerina/io;
+import ballerina/log;
+import ballerina/websub;
 import ballerinax/github.webhook;
-//import ballerinax/googleapis_sheets as sheets;
 import ballerinax/slack;
 
 // GitHub configuration parameters
@@ -35,39 +34,46 @@ service websub:SubscriberService /subscriber on githubListener {
         var payload = githubListener.getEventType(event);
 
         io:StringReader sr = new (event.content.toJsonString());
-        json|error releaseInfo = sr.readJson();
+        json|error allInfo = sr.readJson();
 
-        if (releaseInfo is json) {
-            if (releaseInfo.action == "released") {
-                io:println(releaseInfo);
-                if (releaseInfo.release is json) {
-                    sendMessageWithContactCreation(releaseInfo);
+        if (allInfo is json) {
+            if (allInfo.action == RELEASED) {
+                io:println(allInfo);
+                json|error releaseInfo = allInfo.release; 
+                if (releaseInfo is json) {
+                    sendMessageForNewRelease(releaseInfo);
+                } else {
+                    log:printError(releaseInfo.message());        
                 }
             }
         } else {
-            io:println("Error Occured : ");
+            log:printError(allInfo.message());        
         }
     }
 }
 
-function sendMessageWithContactCreation(json release) {
+function sendMessageForNewRelease(json release) {
     string message = "There is new release in GitHub \n";
-    map<json> contactsMap = <map<json>> release;
-    foreach var [key, value] in contactsMap.entries() {
-        if(value != ()) {
-            message = message + key + " : " + value.toString() + "\n";
-        }
+    map<json> releaseMap = <map<json>> release;
+    [string,string][] releaseTuples = [["Version Number", RELEASE_TAG_NAME], ["Target branch", TARGET_COMMITTISH]];
+
+    message += "<" + releaseMap.get(RELEASE_URL).toString() + ">\n";  
+    foreach var releaseTuple in releaseTuples {
+        var [value,'key] = releaseTuple;
+        if (releaseMap.hasKey('key)) {
+            message += value + " : " + releaseMap.get('key).toString() + "\n";  
+        }   
     }
 
     slack:Message newMessage = {
         channelName: slack_channel_name,
-        text: "TEXT MESSAGE"
+        text: message
     };
     string|error slackResponse = slackClient->postMessage(newMessage);
 
     if slackResponse is string {
-        io:print("Messege posted in Slack Successfully");
+        log:print("Messege posted in Slack Successfully");
     } else {
-        io:println("Error Occured : " + slackResponse.message());
+        log:printError("Error Occured : " + slackResponse.message());
     }
 }
