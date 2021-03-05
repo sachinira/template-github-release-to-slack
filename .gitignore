@@ -2,6 +2,7 @@
 *.class
 *.balx
 # Log file
+*.lck
 *.log
 
 #conf file
