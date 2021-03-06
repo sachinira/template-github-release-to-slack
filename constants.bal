@@ -1,6 +1,12 @@
-const string RELEASED = "released";
+# The event to which template listens
+const RELEASED = "released";
 
-// Keys related to the release
-const string RELEASE_URL = "html_url"; 
-const string RELEASE_TAG_NAME = "tag_name";
-const string TARGET_COMMITTISH = "target_commitish";
+# Keys related to the release
+const RELEASE_URL = "html_url"; 
+const RELEASE_TAG_NAME = "tag_name";
+const TARGET_COMMITTISH = "target_commitish";
+
+# Formatted text
+const VERSION_NUMBER = "Version Number";
+const TARGET_BRANCH = "Target branch";
+const SEMICOLON = " : ";

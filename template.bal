@@ -32,7 +32,6 @@ slack:Client slackClient = check new (slackConfig);
 service websub:SubscriberService /subscriber on githubListener {
     remote function onEventNotification(websub:ContentDistributionMessage event) {
         var payload = githubListener.getEventType(event);
-
         io:StringReader sr = new (event.content.toJsonString());
         json|error allInfo = sr.readJson();
 
@@ -53,18 +52,17 @@ service websub:SubscriberService /subscriber on githubListener {
 }
 
 function sendMessageForNewRelease(json release) {
-    string message = "There is new release in GitHub \n";
+    string message = "There is a new release in GitHub ! \n";
     map<json> releaseMap = <map<json>> release;
-    [string,string][] releaseTuples = [["Version Number", RELEASE_TAG_NAME], ["Target branch", TARGET_COMMITTISH]];
+    [string,string][] releaseTuples = [[VERSION_NUMBER, RELEASE_TAG_NAME], [TARGET_BRANCH, TARGET_COMMITTISH]];
 
     message += "<" + releaseMap.get(RELEASE_URL).toString() + ">\n";  
     foreach var releaseTuple in releaseTuples {
         var [value,'key] = releaseTuple;
         if (releaseMap.hasKey('key)) {
-            message += value + " : " + releaseMap.get('key).toString() + "\n";  
+            message += value + SEMICOLON + releaseMap.get('key).toString() + "\n";  
         }   
     }
-
     slack:Message newMessage = {
         channelName: slack_channel_name,
         text: message
