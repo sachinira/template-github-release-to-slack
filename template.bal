@@ -5,8 +5,8 @@ import ballerinax/github.webhook;
 import ballerinax/slack;
 
 // GitHub configuration parameters
-configurable string github_accessToken = ?;
-configurable string github_callbackUrl = ?;
+configurable string github_access_token = ?;
+configurable string github_callback_url = ?;
 configurable string github_topic = ?;
 configurable string github_secret = ?;
 
@@ -21,11 +21,11 @@ slack:Client slackClient = check new (slackConfig);
 
 @websub:SubscriberServiceConfig {
     target: [webhook:HUB, github_topic],
-    callback: github_callbackUrl,
+    callback: github_callback_url,
     secret: github_secret,
     httpConfig: {
         auth: {
-            token: github_accessToken
+            token: github_access_token
         }
     }
 }
