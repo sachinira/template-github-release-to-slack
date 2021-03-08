@@ -33,12 +33,11 @@ service websub:SubscriberService /subscriber on githubListener {
     remote function onEventNotification(websub:ContentDistributionMessage event) {
         var payload = githubListener.getEventType(event);
         io:StringReader sr = new (event.content.toJsonString());
-        json|error allInfo = sr.readJson();
+        json|error allEvents = sr.readJson();
 
-        if (allInfo is json) {
-            if (allInfo.action == RELEASED) {
-                io:println(allInfo);
-                json|error releaseInfo = allInfo.release; 
+        if (allEvents is json) {
+            if (allEvents.action == RELEASED) {
+                json|error releaseInfo = allEvents.release; 
                 if (releaseInfo is json) {
                     sendMessageForNewRelease(releaseInfo);
                 } else {
@@ -46,7 +45,7 @@ service websub:SubscriberService /subscriber on githubListener {
                 }
             }
         } else {
-            log:printError(allInfo.message());        
+            log:printError(allEvents.message());        
         }
     }
 }
@@ -58,9 +57,9 @@ function sendMessageForNewRelease(json release) {
 
     message += "<" + releaseMap.get(RELEASE_URL).toString() + ">\n";  
     foreach var releaseTuple in releaseTuples {
-        var [value,'key] = releaseTuple;
-        if (releaseMap.hasKey('key)) {
-            message += value + SEMICOLON + releaseMap.get('key).toString() + "\n";  
+        var [description,keyFromMap] = releaseTuple;
+        if (releaseMap.hasKey(keyFromMap)) {
+            message += description + SEMICOLON + releaseMap.get(keyFromMap).toString() + "\n";  
         }   
     }
     slack:Message newMessage = {

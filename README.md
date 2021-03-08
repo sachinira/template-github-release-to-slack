@@ -1,9 +1,14 @@
 # Template: GitHub new release to Slack Channel message
 When a new release is done in GitHub, send a message to a Slack channel. <br>
 
-It is important to be updated with a particular software development tool that you or your team are using in the day-to-day development process and get notified immediately on a new release of it. There can be a slack channel followed by a development community or a team that uses that specific tool. This template makes it easier to provide such notification by allowing to send a message to a targeted Slack channel when there is a new release in a specific GitHub repository.
+It is important to be updated with a particular software development tool that you or your team are using in the 
+day-to-day development process and get notified immediately on a new release of it. There can be a Slack channel 
+followed by a development community or a team that uses that specific tool. This template makes it easier to provide 
+such notification by allowing to send a message to a targeted Slack channel when there is a new release in a specific 
+GitHub repository.
 
-This template can be used to send a message to a selected Slack channel when a new release is done in a specific repository in GitHub.
+This template can be used to send a message to a selected Slack channel when a new release is done in a specific 
+repository in GitHub.
 
 ## Use this template to
 - Send a Channel message to a Slack channel which is created for developers who use a Git repository.
