@@ -1,21 +1,16 @@
 import ballerina/io;
-import ballerina/log;
 import ballerina/websub;
 import ballerinax/github.webhook;
 import ballerinax/slack;
 
-// GitHub configuration parameters
 configurable string github_access_token = ?;
 configurable string github_callback_url = ?;
 configurable string github_topic = ?;
 configurable string github_secret = ?;
-
-// Slack configuration parameters
 configurable string slack_token = ?;
 configurable string slack_channel_name = ?;
 
 listener webhook:Listener githubListener = new (8080);
-
 slack:Configuration slackConfig = {bearerTokenConfig: {token: slack_token}};
 slack:Client slackClient = check new (slackConfig);
 
@@ -30,27 +25,19 @@ slack:Client slackClient = check new (slackConfig);
     }
 }
 service websub:SubscriberService /subscriber on githubListener {
-    remote function onEventNotification(websub:ContentDistributionMessage event) {
+    remote function onEventNotification(websub:ContentDistributionMessage event) returns error? {
         var payload = githubListener.getEventType(event);
-        io:StringReader sr = new (event.content.toJsonString());
-        json|error allEvents = sr.readJson();
-
-        if (allEvents is json) {
-            if (allEvents.action == RELEASED) {
-                json|error releaseInfo = allEvents.release; 
-                if (releaseInfo is json) {
-                    sendMessageForNewRelease(releaseInfo);
-                } else {
-                    log:printError(releaseInfo.message());        
-                }
-            }
-        } else {
-            log:printError(allEvents.message());        
+        
+        io:StringReader stringReader = new (event.content.toJsonString());
+        json allEvents = check stringReader.readJson();
+        if (allEvents.action == RELEASED || allEvents.action == EDITED) {
+            json releaseInfo = check allEvents.release; 
+            check sendMessageForNewRelease(releaseInfo);
         }
     }
 }
 
-function sendMessageForNewRelease(json release) {
+function sendMessageForNewRelease(json release) returns error? {
     string message = "There is a new release in GitHub ! \n";
     map<json> releaseMap = <map<json>> release;
     [string,string][] releaseTuples = [[VERSION_NUMBER, RELEASE_TAG_NAME], [TARGET_BRANCH, TARGET_COMMITTISH]];
@@ -66,11 +53,5 @@ function sendMessageForNewRelease(json release) {
         channelName: slack_channel_name,
         text: message
     };
-    string|error slackResponse = slackClient->postMessage(newMessage);
-
-    if slackResponse is string {
-        log:print("Messege posted in Slack Successfully");
-    } else {
-        log:printError("Error Occured : " + slackResponse.message());
-    }
+    _ = check slackClient->postMessage(newMessage);
 }

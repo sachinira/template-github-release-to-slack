@@ -1,5 +1,6 @@
 # The event to which template listens
 const RELEASED = "released";
+const EDITED = "edited";
 
 # Keys related to the release
 const RELEASE_URL = "html_url"; 
