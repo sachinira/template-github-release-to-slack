@@ -1,4 +1,4 @@
-import ballerina/io;
+//import ballerina/io;
 import ballerina/websub;
 import ballerinax/github.webhook;
 import ballerinax/slack;
@@ -10,48 +10,36 @@ configurable string github_secret = ?;
 configurable string slack_token = ?;
 configurable string slack_channel_name = ?;
 
-listener webhook:Listener githubListener = new (8080);
+listener webhook:Listener githubListener = new(8080);
 slack:Configuration slackConfig = {bearerTokenConfig: {token: slack_token}};
 slack:Client slackClient = check new (slackConfig);
 
 @websub:SubscriberServiceConfig {
     target: [webhook:HUB, github_topic],
     callback: github_callback_url,
-    secret: github_secret,
     httpConfig: {
         auth: {
             token: github_access_token
         }
     }
 }
-service websub:SubscriberService /subscriber on githubListener {
-    remote function onEventNotification(websub:ContentDistributionMessage event) returns error? {
-        var payload = githubListener.getEventType(event);
-        
-        io:StringReader stringReader = new (event.content.toJsonString());
-        json allEvents = check stringReader.readJson();
-        if (allEvents.action == RELEASED || allEvents.action == EDITED) {
-            json releaseInfo = check allEvents.release; 
-            check sendMessageForNewRelease(releaseInfo);
+service /subscriber on githubListener {
+    remote function onReleased(webhook:ReleaseEvent event) returns error? {
+        webhook:Release releaseInfo = event.release; 
+        string message = "There is a new release in GitHub ! \n";
+        [string,string][] releaseTuples = [[VERSION_NUMBER, RELEASE_TAG_NAME], [TARGET_BRANCH, TARGET_COMMITTISH]];
+
+        message += "<" + releaseInfo.get(RELEASE_URL).toString() + ">\n";  
+        foreach var releaseTuple in releaseTuples {
+            var [description,keyFromMap] = releaseTuple;
+            if (releaseInfo.hasKey(keyFromMap)) {
+                message += description + SEMICOLON + releaseInfo.get(keyFromMap).toString() + "\n";  
+            }   
         }
+        slack:Message newMessage = {
+            channelName: slack_channel_name,
+            text: message
+        };
+        _ = check slackClient->postMessage(newMessage);
     }
-}
-
-function sendMessageForNewRelease(json release) returns error? {
-    string message = "There is a new release in GitHub ! \n";
-    map<json> releaseMap = <map<json>> release;
-    [string,string][] releaseTuples = [[VERSION_NUMBER, RELEASE_TAG_NAME], [TARGET_BRANCH, TARGET_COMMITTISH]];
-
-    message += "<" + releaseMap.get(RELEASE_URL).toString() + ">\n";  
-    foreach var releaseTuple in releaseTuples {
-        var [description,keyFromMap] = releaseTuple;
-        if (releaseMap.hasKey(keyFromMap)) {
-            message += description + SEMICOLON + releaseMap.get(keyFromMap).toString() + "\n";  
-        }   
-    }
-    slack:Message newMessage = {
-        channelName: slack_channel_name,
-        text: message
-    };
-    _ = check slackClient->postMessage(newMessage);
 }
